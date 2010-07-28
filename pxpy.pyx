@@ -22,6 +22,9 @@ import datetime
 cdef extern from "Python.h": 
     object PyString_FromStringAndSize(char *s, int len)
     object PyString_Decode(char *s, int len, char *encoding, char *errors)
+    object PyString_FromStringAndSize(char *v, int len)
+    object PyString_AsDecodedObject(object str, char *encoding, char *errors)
+
 
 cdef extern from "string.h":
     int strnlen(char *s, int maxlen)
@@ -369,8 +372,10 @@ cdef class Field:
             if size==0:
                 return None
             else:
-                return PyString_Decode(<char*> self.data, size,
-                                       codepage, "replace")
+                py_string = PyString_FromStringAndSize(<char*> self.data, size);
+                if not py_string:
+                    raise "Cannot get value from string %s" % self.fname
+                return PyString_AsDecodedObject(py_string, codepage, "replace")
         
         elif self.ftype == pxfDate:
             if PX_get_data_long(self.record.table.doc,
@@ -423,7 +428,10 @@ cdef class Field:
                                         &mod_nr, &size)
             if blobdata and size>0:
                 codepage = self.record.table.getCodePage()
-                return PyString_Decode(blobdata, size, codepage, "replace")
+                py_string = PyString_FromStringAndSize(<char*> blobdata, size);
+                if not py_string:
+                    raise "Cannot get value from string %s" % self.fname
+                return PyString_AsDecodedObject(py_string, codepage, "replace")
             
         elif self.ftype in [pxfBLOb, pxfGraphic]:
             if not self.record.table.blob:
