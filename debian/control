@@ -1,0 +1,13 @@
+Source: python-pxlib
+Section: python
+Priority: optional
+Maintainer: Uwe Steinmann <steinm@debian.org>
+Build-Depends: debhelper (>> 4.0.0), po-debconf, pxlib-dev, python-dev (>= 2.3)
+Standards-Version: 3.6.1
+
+Package: python-pxlib
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
+Description: An extension to read and write Paradox databases
+ This is the Python wrapper around the lower level pxlib, a library
+ for reading and writing Paradox database files.
