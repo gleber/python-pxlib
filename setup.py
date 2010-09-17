@@ -5,11 +5,12 @@
 # :Author:   Lele Gaifax <lele@nautilus.homeip.net>
 # :Revision: $Revision: 1.3 $ by $Author: lele $
 # :Date:     $Date: 2004/07/19 23:04:35 $
-# 
+#
 
 from distutils.core import setup
 from distutils.extension import Extension
-from Pyrex.Distutils import build_ext
+from Cython.Distutils import build_ext
+
 
 setup(
   name = 'python-pxlib',
@@ -18,8 +19,8 @@ setup(
   author = "Lele Gaifax",
   author_email = "lele@nautilus.homeip.net",
   url = "http://pxlib.sourceforge.net/",
-  
-  ext_modules=[ 
+
+  ext_modules=[
     Extension("pxpy", ["pxpy.pyx"],
               # Uncomment, to use current version
               #include_dirs=["../../pxlib/include/"],
