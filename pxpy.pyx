@@ -328,16 +328,30 @@ cdef class Table(PXDoc):
 
         return self.record.read(recno)
 
-cdef class Field:
+cdef class ParadoxField:
+    cdef readonly fname
+    cdef readonly ftype
+    cdef readonly flen
+
+    def __cinit__(self, *args):
+        print 'ParadoxField cinit', args
+
+    def _init_fields(self, fname, int ftype, int flen):
+        print 'ParadoxField _init_fields', fname, ftype, flen
+        self.fname = fname
+        self.ftype = ftype
+        self.flen = flen
+
+    def __init__(self, fname, int ftype, int flen):
+        self._init_fields(fname, ftype, flen)
+
+cdef class RecordField(ParadoxField):
     """
     Represent a single field of a Record associated to some Table.
     """
 
     cdef void *data
     cdef Record record
-    cdef readonly fname
-    cdef readonly ftype
-    cdef readonly flen
 
     def __init__(self, Record record, int index, int offset):
         """
@@ -347,10 +361,11 @@ cdef class Field:
         """
 
         self.record = record
-        self.fname = record.table.doc.px_head.px_fields[index].px_fname
-        self.ftype = record.table.doc.px_head.px_fields[index].px_ftype
         self.data = record.data+offset
-        self.flen = record.table.doc.px_head.px_fields[index].px_flen
+        ParadoxField.__init__(self,
+                              record.table.doc.px_head.px_fields[index].px_fname,
+                              record.table.doc.px_head.px_fields[index].px_ftype,
+                              record.table.doc.px_head.px_fields[index].px_flen)
 
     def getValue(self):
         """
@@ -493,7 +508,7 @@ cdef class Record:
         self.fields = []
         offset = 0
         for i in range(self.getFieldsCount()):
-            field = Field(self, i, offset)
+            field = RecordField(self, i, offset)
             self.fields.append(field)
             offset = offset + table.doc.px_head.px_fields[i].px_flen
 
