@@ -174,7 +174,7 @@ cdef class PXDoc:
         """
 
         if PX_open_file(self.doc, self.filename)<0:
-            raise "Couldn't open `%s`" % self.filename
+            raise Exception("Couldn't open `%s`" % self.filename)
         self.isopen = 1
 
     def close(self):
@@ -224,7 +224,7 @@ cdef class BlobFile:
         """
 
         if PX_open_blob_file(self.blob, self.filename)<0:
-            raise "Couldn't open blob `%s`" % self.filename
+            raise Exception("Couldn't open blob `%s`" % self.filename)
         self.isopen = 1
 
     def close(self):
@@ -255,7 +255,7 @@ cdef class PrimaryIndex(PXDoc):
 
         PXDoc.open(self)
         if PX_read_primary_index(self.doc)<0:
-            raise "Couldn't read primary index `%s`" % self.filename
+            raise Exception("Couldn't read primary index `%s`" % self.filename)
 
 
 cdef class Record
@@ -289,7 +289,7 @@ cdef class Table(PXDoc):
             f[i].px_fdc = 0
 
         if PX_create_file(self.doc, f, n, self.filename, pxfFileTypIndexDB) < 0:
-            raise "Couldn't open `%s`" % self.filename
+            raise Exception("Couldn't open '%s'" % self.filename)
         self.isopen = 1
         self.current_recno = -1
 
@@ -330,7 +330,7 @@ cdef class Table(PXDoc):
         self.primary_index = PrimaryIndex(indexname)
         self.primary_index.open()
         if PX_add_primary_index(self.doc, self.primary_index.doc)<0:
-            raise "Couldn't add primary index `%s`" % indexname
+            raise Exception("Couldn't add primary index `%s`" % indexname)
 
     def setBlobFile(self, blobfilename):
         """
@@ -494,13 +494,13 @@ cdef class RecordField(ParadoxField):
             else:
                 py_string = PyString_FromStringAndSize(<char*> self.data, size);
                 if not py_string:
-                    raise "Cannot get value from string %s" % self.fname
+                    raise Exception("Cannot get value from string %s" % self.fname)
                 return PyString_AsDecodedObject(py_string, codepage, "replace")
 
         elif self.ftype == pxfDate:
             if PX_get_data_long(self.record.table.doc,
                                 self.data, self.flen, &value_long)<0:
-                raise "Cannot extract long field '%s'" % self.fname
+                raise Exception("Cannot extract long field '%s'" % self.fname)
             if value_long:
                 PX_SdnToGregorian(value_long+1721425,
                                   &year, &month, &day)
@@ -511,28 +511,28 @@ cdef class RecordField(ParadoxField):
         elif self.ftype == pxfShort:
             if PX_get_data_short(self.record.table.doc,
                                 self.data, self.flen, &value_short)<0:
-                raise "Cannot extract short field '%s'" % self.fname
+                raise Exception("Cannot extract short field '%s'" % self.fname)
 
             return value_short
 
         elif self.ftype == pxfLong or self.ftype == pxfAutoInc:
             if PX_get_data_long(self.record.table.doc,
                                 self.data, self.flen, &value_long)<0:
-                raise "Cannot extract long field '%s'" % self.fname
+                raise Exception("Cannot extract long field '%s'" % self.fname)
 
             return value_long
 
         elif self.ftype == pxfCurrency or self.ftype == pxfNumber:
             if PX_get_data_double(self.record.table.doc,
                                   self.data, self.flen, &value_double)<0:
-                raise "Cannot extract double field '%s'" % self.fname
+                raise Exception("Cannot extract double field '%s'" % self.fname)
 
             return value_double
 
         elif self.ftype == pxfLogical:
             if PX_get_data_byte(self.record.table.doc,
                                 self.data, self.flen, &value_char)<0:
-                raise "Cannot extract double field '%s'" % self.fname
+                raise Exception("Cannot extract double field '%s'" % self.fname)
             if value_char:
                 return True
             else:
@@ -550,7 +550,7 @@ cdef class RecordField(ParadoxField):
                 codepage = self.record.table.getCodePage()
                 py_string = PyString_FromStringAndSize(<char*> blobdata, size);
                 if not py_string:
-                    raise "Cannot get value from string %s" % self.fname
+                    raise Exception("Cannot get value from string %s" % self.fname)
                 return PyString_AsDecodedObject(py_string, codepage, "replace")
 
         elif self.ftype in [pxfBLOb, pxfGraphic]:
@@ -568,7 +568,7 @@ cdef class RecordField(ParadoxField):
         elif self.ftype == pxfTime:
             if PX_get_data_long(self.record.table.doc,
                                 self.data, self.flen, &value_long)<0:
-                raise "Cannot extract long field '%s'" % self.fname
+                raise Exception("Cannot extract long field '%s'" % self.fname)
             if value_long:
                 return datetime.time(value_long/3600000,
                                      value_long/60000%60,
@@ -627,7 +627,7 @@ cdef class Record:
         """
 
         if PX_get_record(self.table.doc, recno, self.data) == NULL:
-            raise "Couldn't get record %d from '%s'" % (recno,
-                                                        self.table.filename)
+            raise Exception("Couldn't get record %d from '%s'" % (recno,
+                                                                  self.table.filename))
         return True
 
