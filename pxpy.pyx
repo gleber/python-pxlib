@@ -384,14 +384,14 @@ cdef class Table(PXDoc):
         fs = {}
         for i from 0 <= i < l:
             f = self.fields[i]
-            v = values[f.fname]
+            v = values.get(f.fname, None)
             if f.ftype == pxfAlpha:
-                s = str(v)
+                s = str(v or '')
                 PX_put_data_alpha(self.doc, &buffer[o], f.flen, <char *>s)
             elif f.ftype == pxfLong:
-                PX_put_data_long(self.doc, &buffer[o], f.flen, <long>int(v))
+                PX_put_data_long(self.doc, &buffer[o], f.flen, <long>int(v or 0))
             elif f.ftype == pxfNumber:
-                PX_put_data_double(self.doc, &buffer[o], f.flen, <double>float(v))
+                PX_put_data_double(self.doc, &buffer[o], f.flen, <double>float(v or 0.0))
             else:
                 raise Exception("unknown type")
             o += f.flen
