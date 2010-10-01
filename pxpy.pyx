@@ -385,13 +385,16 @@ cdef class Table(PXDoc):
         for i from 0 <= i < l:
             f = self.fields[i]
             v = values.get(f.fname, None)
+            l = f.flen
+            if v == None:
+                l = 0
             if f.ftype == pxfAlpha:
                 s = str(v or '')
-                PX_put_data_alpha(self.doc, &buffer[o], f.flen, <char *>s)
+                PX_put_data_alpha(self.doc, &buffer[o], l, <char *>s)
             elif f.ftype == pxfLong:
-                PX_put_data_long(self.doc, &buffer[o], f.flen, <long>int(v or 0))
+                PX_put_data_long(self.doc, &buffer[o], l, <long>int(v or 0))
             elif f.ftype == pxfNumber:
-                PX_put_data_double(self.doc, &buffer[o], f.flen, <double>float(v or 0.0))
+                PX_put_data_double(self.doc, &buffer[o], l, <double>float(v or 0.0))
             else:
                 raise Exception("unknown type")
             o += f.flen
@@ -509,30 +512,43 @@ cdef class RecordField(ParadoxField):
                 return None
 
         elif self.ftype == pxfShort:
-            if PX_get_data_short(self.record.table.doc,
-                                self.data, self.flen, &value_short)<0:
+            ret = PX_get_data_short(self.record.table.doc,
+                                    self.data, self.flen, &value_short)
+            if ret < 0:
                 raise Exception("Cannot extract short field '%s'" % self.fname)
+
+            if ret == 0:
+                return None
 
             return value_short
 
         elif self.ftype == pxfLong or self.ftype == pxfAutoInc:
-            if PX_get_data_long(self.record.table.doc,
-                                self.data, self.flen, &value_long)<0:
+            ret = PX_get_data_long(self.record.table.doc,
+                                   self.data, self.flen, &value_long)
+            if ret < 0:
                 raise Exception("Cannot extract long field '%s'" % self.fname)
+            if ret == 0:
+                return None
 
             return value_long
 
         elif self.ftype == pxfCurrency or self.ftype == pxfNumber:
-            if PX_get_data_double(self.record.table.doc,
-                                  self.data, self.flen, &value_double)<0:
+            ret = PX_get_data_double(self.record.table.doc,
+                                     self.data, self.flen, &value_double)
+            if ret < 0:
                 raise Exception("Cannot extract double field '%s'" % self.fname)
-
+            if ret == 0:
+                return None
             return value_double
 
         elif self.ftype == pxfLogical:
-            if PX_get_data_byte(self.record.table.doc,
-                                self.data, self.flen, &value_char)<0:
+            ret = PX_get_data_byte(self.record.table.doc,
+                                   self.data, self.flen, &value_char)
+            if ret < 0:
                 raise Exception("Cannot extract double field '%s'" % self.fname)
+            if ret == 0:
+                return None
+
             if value_char:
                 return True
             else:
