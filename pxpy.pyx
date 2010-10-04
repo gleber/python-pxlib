@@ -18,8 +18,13 @@ using the pxlib_ library.
 """
 
 import datetime
-#from libc.stdlib cimport *
 
+import sys
+
+from libc.stdlib cimport *
+cdef extern from "stdlib.h" nogil:
+    void *memset(void *str, int c, size_t n)
+    void *memcpy(void *str1, void *str2, size_t n)
 
 cdef extern from "Python.h":
     object PyString_FromStringAndSize(char *s, int len)
@@ -375,11 +380,14 @@ cdef class Table(PXDoc):
         return self.record.read(recno)
 
     def append(self, values):
+        cdef char *b
         l = len(self.fields)
         n = sum([ f.flen for f in self.fields ])
+        bufsize = n * sizeof(char)
         cdef char *buffer = <char *>(self.doc.malloc(self.doc,
-                                                     n * sizeof(char),
+                                                     bufsize,
                                                      "Memory for appended record"))
+        memset(buffer, 0, bufsize)
         o = 0
         fs = {}
         for i from 0 <= i < l:
@@ -390,7 +398,10 @@ cdef class Table(PXDoc):
                 l = 0
             if f.ftype == pxfAlpha:
                 s = str(v or '')
-                PX_put_data_alpha(self.doc, &buffer[o], l, <char *>s)
+                b = <char *>(self.doc.malloc(self.doc, f.flen, "Memory for alpha field"))
+                memcpy(b, <char *>s, max(f.flen, len(s)))
+                PX_put_data_alpha(self.doc, &buffer[o], f.flen, b)
+                self.doc.free(self.doc, b)
             elif f.ftype == pxfLong:
                 PX_put_data_long(self.doc, &buffer[o], l, <long>int(v or 0))
             elif f.ftype == pxfNumber:
@@ -399,12 +410,11 @@ cdef class Table(PXDoc):
                 raise Exception("unknown type")
             o += f.flen
 
-        # for i from 0 <= i < o:
-        #     print buffer[i],
-        # print
 
         if PX_put_record(self.doc, buffer) == -1:
             raise Exception("unable to put record")
+
+        self.doc.free(self.doc, buffer)
 
         self.current_recno = self.current_recno + 1
 
@@ -492,6 +502,7 @@ cdef class RecordField(ParadoxField):
         if self.ftype == pxfAlpha:
             codepage = self.record.table.getCodePage()
             size = strnlen(<char*> self.data, self.flen)
+
             if size==0:
                 return None
             else:
