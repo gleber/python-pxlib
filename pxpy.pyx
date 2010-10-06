@@ -128,6 +128,8 @@ cdef extern from "paradox.h":
     int PX_add_primary_index(pxdoc_t *pxdoc, pxdoc_t *pindex)
     int PX_set_targetencoding(pxdoc_t *pxdoc, char *encoding)
     int PX_set_inputencoding(pxdoc_t *pxdoc, char *encoding)
+    int PX_set_parameter(pxdoc_t *pxdoc, char *name, char *value)
+    int PX_set_value(pxdoc_t *pxdoc, char *name, float value)
     pxblob_t *PX_new_blob(pxdoc_t *pxdoc)
     int PX_open_blob_file(pxblob_t *pxdoc, char *filename)
     int PX_close(pxdoc_t *pxdoc)
@@ -196,6 +198,12 @@ cdef class PXDoc:
 
     def setInputEncoding(self, encoding):
         PX_set_inputencoding(self.doc, encoding)
+
+    def setValue(self, parameter, value):
+        PX_set_value(self.doc, parameter, <float>value)
+
+    def setParameter(self, parameter, value):
+        PX_set_parameter(self.doc, parameter, value)
 
     def __dealloc__(self):
         """
@@ -397,7 +405,8 @@ cdef class Table(PXDoc):
             if v == None:
                 l = 0
             if f.ftype == pxfAlpha:
-                s = str(v or '')
+                s = unicode(str(v or '').decode('utf-8'))
+                s = s.encode(self.getCodePage())
                 b = <char *>(self.doc.malloc(self.doc, f.flen, "Memory for alpha field"))
                 memcpy(b, <char *>s, max(f.flen, len(s)))
                 PX_put_data_alpha(self.doc, &buffer[o], f.flen, b)
